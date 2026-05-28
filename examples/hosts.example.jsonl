@@ -1,0 +1,2 @@
+{"ip":"10.0.0.10","user":"root","password":"example_password","port":22}
+{"ip":"10.0.0.11","user":"ubuntu","password":"another_example_password","port":22}
