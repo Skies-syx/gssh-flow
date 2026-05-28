@@ -6,6 +6,8 @@ gssh-flow 是一个轻量的终端机器管理工作流：用 `fzf` 搜索主机
 
 它适合内网研发、测试、快照频繁恢复、机器经常重装的环境。
 
+当前版本面向 macOS + zsh。`pwds` 使用 macOS 的 `pbcopy`，安装脚本会写入 `~/.zshrc` 和 `~/.zprofile`。
+
 ## 功能特性
 
 - `s`：fzf 搜索 IP 并 SSH 登录
@@ -50,6 +52,8 @@ brew install hudochenkov/sshpass/sshpass
 python3
 ssh
 scp
+ssh-keygen
+pbcopy
 ```
 
 安装脚本会检查依赖，但不会静默安装依赖。
@@ -121,6 +125,13 @@ pwds
 | `down` | `gdown` |
 | `pwds` | `gpwds` |
 
+可选环境变量：
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `GSSH_CLEAR_BEFORE_CONNECT` | `0` | 设为 `1` 时，SSH 登录前清屏 |
+| `GSSH_AUTO_MIGRATE_LEGACY` | `0` | 设为 `1` 时，命令执行前允许从旧 `~/.ssh/hosts.txt` 迁移 |
+
 ## 数据格式
 
 凭证保存在：
@@ -158,10 +169,18 @@ root|password|22
 可以临时开启迁移：
 
 ```bash
-GSSH_AUTO_MIGRATE_LEGACY=1 source ~/.config/gssh-flow/workflow.zsh
+gssh-migrate-legacy
+```
+
+也可以在下一次执行命令时临时允许迁移：
+
+```bash
+GSSH_AUTO_MIGRATE_LEGACY=1 s
 ```
 
 默认不会自动读取旧 `~/.ssh/hosts.txt`，避免误迁移无关文件。迁移后继续使用 `hosts.jsonl`。
+
+如果旧 `hosts.txt` 和现有 `hosts.jsonl` 有相同 IP，保留现有 `hosts.jsonl` 记录，旧数据只补充缺失 IP。
 
 ## Ghostty 建议配置
 
@@ -225,6 +244,13 @@ ssh-keygen -R "[$ip]:$port"
 ```
 
 路径输入支持常见的 Finder 拖入格式，会自动去掉首尾引号、尾部空格和粘贴带来的换行。
+
+传输时会显示汇总进度：
+
+- 下载时，按本地目标文件/目录增长量估算进度
+- 上传时，每 2 秒通过 SSH 查询一次远端目标大小来估算进度
+- 小文件可能瞬间完成，只看到最终 `100%`
+- 远端路径不存在、权限不足或远端缺少 `du` 时，仍会继续执行 `scp`，但总大小可能显示为 `0K`
 
 ## 卸载
 
@@ -299,6 +325,8 @@ gssh-flow is a tiny terminal-first SSH workflow. It uses `fzf` for host search, 
 
 It is designed for internal development/test environments where machines are frequently rebuilt, snapshotted, or reused.
 
+The current version targets macOS + zsh. `pwds` uses macOS `pbcopy`, and the installer writes to `~/.zshrc` and `~/.zprofile`.
+
 ## Features
 
 - `s`: search hosts with fzf and SSH into one
@@ -343,6 +371,8 @@ Also required:
 python3
 ssh
 scp
+ssh-keygen
+pbcopy
 ```
 
 The installer checks dependencies but does not silently install them.
@@ -385,6 +415,23 @@ Copy a password:
 pwds
 ```
 
+Long command aliases are also available:
+
+| Short | Long |
+| --- | --- |
+| `s` | `gssh` |
+| `nssh` | `gssh-add` |
+| `up` | `gup` |
+| `down` | `gdown` |
+| `pwds` | `gpwds` |
+
+Optional environment variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `GSSH_CLEAR_BEFORE_CONNECT` | `0` | Set to `1` to clear the terminal before SSH login |
+| `GSSH_AUTO_MIGRATE_LEGACY` | `0` | Set to `1` to allow migration from the old `~/.ssh/hosts.txt` before command execution |
+
 ## Data Format
 
 Hosts are stored at:
@@ -421,10 +468,33 @@ root|password|22
 Run a one-time migration with:
 
 ```bash
-GSSH_AUTO_MIGRATE_LEGACY=1 source ~/.config/gssh-flow/workflow.zsh
+gssh-migrate-legacy
+```
+
+Or allow migration for the next command:
+
+```bash
+GSSH_AUTO_MIGRATE_LEGACY=1 s
 ```
 
 By default, gssh-flow does not read `~/.ssh/hosts.txt`, so it will not accidentally import unrelated files. After migration, `hosts.jsonl` is the source of truth.
+
+If old `hosts.txt` and existing `hosts.jsonl` contain the same IP, the existing `hosts.jsonl` record is kept. Legacy migration only fills missing IPs.
+
+## Upload and Download
+
+`up` and `down` use `scp -r`.
+
+- Upload default remote path: `/tmp`
+- Download default local path: `~/Downloads`
+- Finder-dropped paths and pasted paths with surrounding quotes, trailing spaces, or line breaks are cleaned automatically
+
+Transfers show aggregate progress:
+
+- Downloads estimate progress from the growing local target
+- Uploads query the remote target size over SSH every 2 seconds
+- Small files may finish immediately, so you may only see the final `100%`
+- If the remote path is missing, inaccessible, or `du` is unavailable, `scp` still runs but the total size may show as `0K`
 
 ## Security Notes
 

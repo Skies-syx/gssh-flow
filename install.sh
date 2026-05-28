@@ -6,7 +6,7 @@ INSTALL_DIR="${GSSH_HOME:-"$HOME/.config/gssh-flow"}"
 WORKFLOW_FILE="$INSTALL_DIR/workflow.zsh"
 HOSTS_FILE="${GSSH_HOSTS_FILE:-"$INSTALL_DIR/hosts.jsonl"}"
 RAW_BASE="${GSSH_FLOW_RAW_BASE:-"https://raw.githubusercontent.com/Skies-syx/gssh-flow/main"}"
-SOURCE_LINE='[[ -f "$HOME/.config/gssh-flow/workflow.zsh" ]] && source "$HOME/.config/gssh-flow/workflow.zsh"'
+SOURCE_LINE=""
 
 info() {
   printf '[gssh-flow] %s\n' "$*"
@@ -18,6 +18,20 @@ warn() {
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1
+}
+
+shell_quote() {
+  printf "'%s'" "$(printf "%s" "$1" | sed "s/'/'\\\\''/g")"
+}
+
+source_line_for() {
+  local workflow_file="$1"
+  local default_workflow_file="$HOME/.config/gssh-flow/workflow.zsh"
+  if [[ "$workflow_file" == "$default_workflow_file" ]]; then
+    printf '%s\n' '[[ -f "$HOME/.config/gssh-flow/workflow.zsh" ]] && source "$HOME/.config/gssh-flow/workflow.zsh"'
+  else
+    printf '[[ -f %s ]] && source %s\n' "$(shell_quote "$workflow_file")" "$(shell_quote "$workflow_file")"
+  fi
 }
 
 append_source_line() {
@@ -59,6 +73,8 @@ copy_or_download_workflow() {
 }
 
 main() {
+  SOURCE_LINE="$(source_line_for "$WORKFLOW_FILE")"
+
   info "installing to $INSTALL_DIR"
   mkdir -p "$INSTALL_DIR"
   chmod 700 "$INSTALL_DIR" 2>/dev/null || true
@@ -81,6 +97,10 @@ main() {
   need_cmd fzf || { warn "missing fzf. Install on macOS: brew install fzf"; missing=1; }
   need_cmd sshpass || { warn "missing sshpass. Install on macOS: brew install hudochenkov/sshpass/sshpass"; missing=1; }
   need_cmd python3 || { warn "missing python3"; missing=1; }
+  need_cmd ssh || { warn "missing ssh"; missing=1; }
+  need_cmd scp || { warn "missing scp"; missing=1; }
+  need_cmd ssh-keygen || { warn "missing ssh-keygen"; missing=1; }
+  need_cmd pbcopy || { warn "missing pbcopy. pwds uses the macOS clipboard"; missing=1; }
 
   info "done"
   info "next: run 'source ~/.zshrc' or restart your terminal"
