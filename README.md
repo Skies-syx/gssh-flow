@@ -14,7 +14,7 @@ gssh-flow 是一个轻量的终端机器管理工作流：用 `fzf` 搜索主机
 - `nssh`：新增或更新机器凭证
 - `up`：上传本地文件/目录到远端，默认 `/tmp`
 - `down`：从远端下载文件/目录到本地，默认 `~/Downloads`
-- `pwds`：交互查看机器账号密码，并复制选中机器的账号密码
+- `pwds`：交互查看账号密码；带查询时查看匹配机器的账号密码
 - JSONL 凭证库，支持密码包含空格、`|`、引号、中文等字符
 - SSH 主机搜索列表只展示 IP，不展示密码
 - 使用 `sshpass -e`，避免密码出现在命令参数中
@@ -99,13 +99,13 @@ up
 down
 ```
 
-交互查看机器账号密码并复制：
+交互查看账号密码并复制：
 
 ```bash
 pwds
 ```
 
-也可以带查询词打开列表：
+带查询词时，按机器展示 IP、账号、端口和密码：
 
 ```bash
 pwds 10.0.0
@@ -119,7 +119,8 @@ pwds 10.0.0
 | `nssh [ip]` | 新增或更新主机，完成后自动连接 |
 | `up [query]` | 选择主机并上传文件/目录 |
 | `down [query]` | 选择主机并下载文件/目录 |
-| `pwds [query]` | 交互查看机器账号密码，并复制选中机器的账号密码 |
+| `pwds` | 交互查看唯一账号密码，并复制选中账号密码 |
+| `pwds <query>` | 交互查看匹配机器的 IP、账号、端口和密码，并复制选中机器账号密码 |
 
 同时提供长命令别名：
 
@@ -339,7 +340,7 @@ The current version targets macOS + zsh. `pwds` uses macOS `pbcopy`, and the ins
 - `nssh`: add or update a host
 - `up`: upload a local file/directory to a remote host, default remote path `/tmp`
 - `down`: download a remote file/directory, default local path `~/Downloads`
-- `pwds`: interactively view machine credentials and copy the selected machine username/password
+- `pwds`: interactively view credentials; with a query, view matching machine credentials
 - JSONL host database
 - IP-only SSH host search; passwords are not shown in the SSH host picker
 - Password-based SSH via `sshpass -e`
@@ -415,13 +416,13 @@ Download:
 down
 ```
 
-Interactively view machine credentials and copy one:
+Interactively view saved username/password pairs and copy one:
 
 ```bash
 pwds
 ```
 
-You can also open the picker with an initial query:
+With a query, show matching machine IP, username, port, and password:
 
 ```bash
 pwds 10.0.0

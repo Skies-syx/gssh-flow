@@ -661,6 +661,17 @@ function pwds() {
     _gssh_migrate_once
     command -v pbcopy >/dev/null 2>&1 || { echo "缺少 pbcopy：pwds 目前使用 macOS 剪贴板。" >&2; return 1; }
     fzf_bin="$(_gssh_fzf)"
+    if [[ -z "$query" ]]; then
+        selected="$(_gssh_json auths | "$fzf_bin" --prompt="选择账号密码 (将复制账号和密码) > " --layout=reverse --height=30% --border --header="USER | PASSWORD")"
+        [[ -z "$selected" ]] && return
+        user="${selected%% | *}"
+        password="${selected#* | }"
+        [[ -z "$user" || "$selected" == "$password" ]] && return
+        printf '%s\n%s' "$user" "$password" | pbcopy
+        echo "已复制账号和密码到剪贴板：$user"
+        return
+    fi
+
     selected="$(_gssh_json machine_creds | "$fzf_bin" --query="$query" --prompt="选择机器凭证 (将复制账号和密码) > " --layout=reverse --height=40% --border --header=$'IP\tUSER\tPORT\tPASSWORD')"
     [[ -z "$selected" ]] && return
     ip="${selected%%$'\t'*}"
