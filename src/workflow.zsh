@@ -303,6 +303,9 @@ elif action == "auths":
     auths = sorted({f'{h["user"]} | {h["password"]}' for h in hosts})
     for auth in auths:
         print(auth)
+elif action == "machine_creds":
+    for h in hosts:
+        print(f'{h["ip"]}\t{h["user"]}\t{h["port"]}\t{h["password"]}')
 elif action == "upsert":
     ip, user, password, port = args[0], args[1], args[2], int(args[3] or 22)
     hosts = [h for h in hosts if h["ip"] != ip]
@@ -653,15 +656,19 @@ function s() {
 
 function pwds() {
     _gssh_require || return 1
-    local fzf_bin selected pass
+    local query="$1"
+    local fzf_bin selected ip host_json user password port
     command -v pbcopy >/dev/null 2>&1 || { echo "缺少 pbcopy：pwds 目前使用 macOS 剪贴板。" >&2; return 1; }
     fzf_bin="$(_gssh_fzf)"
     _gssh_migrate_once
-    selected="$(_gssh_json auths | "$fzf_bin" --prompt="选择凭证 (将自动复制密码) > " --layout=reverse --height=30% --border)"
+    selected="$(_gssh_json machine_creds | "$fzf_bin" --query="$query" --prompt="选择机器凭证 (将复制账号和密码) > " --layout=reverse --height=40% --border --header=$'IP\tUSER\tPORT\tPASSWORD')"
     [[ -z "$selected" ]] && return
-    pass="${selected#* | }"
-    echo -n "$pass" | pbcopy
-    echo "密码已复制到剪贴板。"
+    ip="${selected%%$'\t'*}"
+    [[ -z "$ip" ]] && return
+    host_json="$(_gssh_host_json "$ip")" || { echo "未找到主机记录：$ip" >&2; return 1; }
+    _gssh_load_host_fields "$host_json" || return 1
+    printf '%s\n%s' "$user" "$password" | pbcopy
+    echo "已复制账号和密码到剪贴板：$user@$ip"
 }
 
 function nssh() {
