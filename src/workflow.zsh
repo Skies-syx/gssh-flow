@@ -658,9 +658,13 @@ function pwds() {
     _gssh_require || return 1
     local query="$1"
     local fzf_bin selected ip host_json user password port
+    _gssh_migrate_once
+    if [[ -z "$query" ]]; then
+        _gssh_json auths
+        return
+    fi
     command -v pbcopy >/dev/null 2>&1 || { echo "缺少 pbcopy：pwds 目前使用 macOS 剪贴板。" >&2; return 1; }
     fzf_bin="$(_gssh_fzf)"
-    _gssh_migrate_once
     selected="$(_gssh_json machine_creds | "$fzf_bin" --query="$query" --prompt="选择机器凭证 (将复制账号和密码) > " --layout=reverse --height=40% --border --header=$'IP\tUSER\tPORT\tPASSWORD')"
     [[ -z "$selected" ]] && return
     ip="${selected%%$'\t'*}"
